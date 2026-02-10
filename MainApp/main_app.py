@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from pathlib import Path
 from pycaret.classification import load_model, predict_model
 
 # =====================================================
@@ -22,6 +23,9 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.caption("Models are loaded once and cached for performance.")
+
+# Base directory where THIS script lives (robust on Streamlit Cloud)
+APP_DIR = Path(__file__).resolve().parent
 
 
 # =====================================================
@@ -62,22 +66,37 @@ def render_alzheimers_page():
 
         return (
             s.fillna("No")
-             .astype(str)
-             .str.strip()
-             .str.lower()
-             .isin({"yes", "y", "1", "true", "t"})
-             .astype(int)
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .isin({"yes", "y", "1", "true", "t"})
+            .astype(int)
         )
 
     def safe_load_alz_model():
-        # PyCaret load_model often expects no extension; try both.
-        for name in ["alzheimers_catboost_pipeline", "alzheimers_catboost_pipeline.pkl"]:
+        """
+        Robust loader for Streamlit Cloud:
+        - Always tries to load from the same folder as main_app.py (APP_DIR)
+        - Tries both PyCaret name-style and explicit .pkl
+        """
+        candidates = [
+            APP_DIR / "alzheimers_catboost_pipeline",      # PyCaret "name" style
+            APP_DIR / "alzheimers_catboost_pipeline.pkl",  # explicit file
+        ]
+
+        errors = []
+        for c in candidates:
             try:
-                return load_model(name)
-            except Exception:
-                pass
+                return load_model(str(c))
+            except Exception as e:
+                errors.append((str(c), repr(e)))
+
         raise RuntimeError(
-            "Could not load model. Ensure 'alzheimers_catboost_pipeline.pkl' is in the working directory."
+            "Could not load Alzheimer’s model.\n"
+            f"Script directory: {APP_DIR}\n"
+            f"Working directory: {Path.cwd()}\n"
+            f"Files in script directory: {[p.name for p in APP_DIR.iterdir()]}\n"
+            "Tried:\n" + "\n".join([f" - {p} -> {err}" for p, err in errors])
         )
 
     @st.cache_resource
@@ -235,14 +254,16 @@ Uploaded CSV must contain the following columns:
 # Page 2: Heart Disease App (wrapped)
 # =====================================================
 def render_heart_page():
-    from io import BytesIO  # keeping your original import style
-
     # ----------------------------
-    # Config
+    # Config (absolute paths)
     # ----------------------------
-    MODEL_NAME = "heart_disease_pipeline_bren"  # pickle base name for PyCaret
-    TEMPLATE_CSV = "heart_modified.csv"
     TARGET_COL = "HeartDisease"
+
+    TEMPLATE_CSV_PATH = APP_DIR / "heart_modified.csv"
+    MODEL_CANDIDATES = [
+        APP_DIR / "heart_disease_pipeline_bren",      # PyCaret name style
+        APP_DIR / "heart_disease_pipeline_bren.pkl",  # explicit file
+    ]
 
     # ----------------------------
     # Styling (your original CSS)
@@ -315,16 +336,28 @@ def render_heart_page():
     )
 
     # ----------------------------
-    # Load model once
+    # Load model once (robust loader)
     # ----------------------------
     @st.cache_resource
     def get_heart_model():
-        return load_model(MODEL_NAME)
+        errors = []
+        for c in MODEL_CANDIDATES:
+            try:
+                return load_model(str(c))
+            except Exception as e:
+                errors.append((str(c), repr(e)))
 
-    # Template feature row (no target)
+        raise RuntimeError(
+            "Could not load Heart model.\n"
+            f"Script directory: {APP_DIR}\n"
+            f"Working directory: {Path.cwd()}\n"
+            f"Files in script directory: {[p.name for p in APP_DIR.iterdir()]}\n"
+            "Tried:\n" + "\n".join([f" - {p} -> {err}" for p, err in errors])
+        )
+
     @st.cache_data
     def load_template_features() -> pd.DataFrame:
-        df_template = pd.read_csv(TEMPLATE_CSV)
+        df_template = pd.read_csv(str(TEMPLATE_CSV_PATH))
         if TARGET_COL in df_template.columns:
             df_template = df_template.drop(columns=[TARGET_COL])
         return df_template
@@ -344,6 +377,9 @@ def render_heart_page():
     def to_csv_bytes(df: pd.DataFrame) -> bytes:
         return df.to_csv(index=False).encode("utf-8")
 
+    # ----------------------------
+    # Load Model
+    # ----------------------------
     try:
         model = get_heart_model()
         st.success("✅ Heart disease model loaded successfully")
