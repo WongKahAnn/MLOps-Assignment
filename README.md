@@ -2,6 +2,7 @@ Heart Diease Predictor - Predicts whether the patient has heart disease or not.
 Alzheimer Predictor - Predicts whether the patient has alzheimer or not. 
 
 The 2 predictor apps above are combined into an integrated webpage app, you can access it using this link:  [INSERT LINK]
+
 The website is hosted/deployed through streamlit community cloud.
 
 The app's target user is for **clinic staff**, not patients itself. Clinic staff is able to use the app to check whether a patient might have heart disease or alzheimer. Do note that the app predictors should only support screening and decision support. **Clinical judgment and further confirmatory testings are required**.
@@ -11,4 +12,6 @@ Heart Diease Predictor (Lock Yan Fong, Brendon) - Choose either single predictio
 Alzheimer Predictor (Wong Kah Ann) - 
 
 We have also uploaded all the files from task 1 to task 3 in our individual folders in the github repository.
+
+Github Repo Link: [INSERT LINK]
  
