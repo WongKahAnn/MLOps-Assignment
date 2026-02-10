@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+.conda/
+logs.txt
+.DS_Store
