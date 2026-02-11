@@ -15,5 +15,3 @@ Alzheimer Predictor (Wong Kah Ann) - Choose either single prediction or scroll d
 We have also uploaded all the files from Task 1 to Task 3 to our individual folders in the GitHub repository.
 
 Github Repo Link: [https://github.com/WongKahAnn/MLOps-Assignment]
- 
-ci tester///
