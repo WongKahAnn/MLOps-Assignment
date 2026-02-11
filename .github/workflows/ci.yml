@@ -10,7 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  ci-test:
+  name: CI Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
