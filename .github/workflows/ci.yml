@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r MainApp/requirements.txt
+
+      - name: Syntax check
+        run: |
+          python -m py_compile MainApp/main_app.py
+
+      - name: Smoke import check (PyCaret + Streamlit)
+        run: |
+          python - << 'PY'
+          import pandas as pd
+          import streamlit as st
+          from pycaret.classification import load_model, predict_model
+          print("✅ Imports OK")
+          PY
+
+      - name: Smoke model load check (files exist + can be loaded)
+        run: |
+          python - << 'PY'
+          from pathlib import Path
+          from pycaret.classification import load_model
+
+          app_dir = Path("MainApp").resolve()
+
+          heart = app_dir / "heart_disease_pipeline_bren.pkl"
+          alz = app_dir / "alzheimers_catboost_pipeline.pkl"
+          template = app_dir / "heart_modified.csv"
+
+          assert heart.exists(), f"Missing: {heart}"
+          assert alz.exists(), f"Missing: {alz}"
+          assert template.exists(), f"Missing: {template}"
+
+          # Try both name-style and explicit pkl for robustness
+          try:
+            _ = load_model(str(app_dir / "heart_disease_pipeline_bren"))
+          except Exception:
+            _ = load_model(str(heart))
+
+          try:
+            _ = load_model(str(app_dir / "alzheimers_catboost_pipeline"))
+          except Exception:
+            _ = load_model(str(alz))
+
+          print("✅ Models loaded OK")
+          PY
