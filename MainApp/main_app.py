@@ -9,6 +9,7 @@ from pycaret.classification import load_model, predict_model
 st.set_page_config(
     page_title="Clinical Risk Prediction Suite",
     layout="centered",
+    initial_sidebar_state="expanded",
 )
 
 # =====================================================
@@ -274,7 +275,6 @@ def render_heart_page():
     st.markdown(
         f"""
         <style>
-            header {{visibility: hidden;}}
             .stApp {{
                 background-color: white;
             }}
@@ -524,3 +524,4 @@ if page == "Heart Disease Predictor":
     render_heart_page()
 else:
     render_alzheimers_page()
+
